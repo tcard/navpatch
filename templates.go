@@ -44,7 +44,7 @@ var templates = template.Must(template.New("").Funcs(template.FuncMap{
 				continue
 			}
 			class := ""
-			sign, line := line[:2], strings.Replace(line[2:], "\t", "&nbsp;&nbsp;&nbsp;&nbsp;", -1)
+			sign, line := line[:2], line[2:]
 			if sign == "+ " {
 				class = "addition"
 			} else if sign == "- " {
@@ -137,6 +137,10 @@ var templates = template.Must(template.New("").Funcs(template.FuncMap{
   	color: #aaa;
   }
 
+  table.diff .line-content {
+    white-space: pre;
+  }
+
   table.diff .addition {
   	background-color: rgb(219, 255, 219);
   }
@@ -178,7 +182,7 @@ var templates = template.Must(template.New("").Funcs(template.FuncMap{
 				<span class="link-name">{{.Name}}</span>
 				<span class="link-right">
 				{{with .Additions}}<span class="additions">+{{.}}</span>{{end}}
-				{{with .Deletions}}<span class="deletions">+{{.}}</span>{{end}}
+				{{with .Deletions}}<span class="deletions">-{{.}}</span>{{end}}
 				{{with .IsDir}}<span class="dir-arrow">▶</span>{{end}}
 				</span>
 			</a>

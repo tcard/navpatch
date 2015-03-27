@@ -27,18 +27,22 @@ func applyChangesToTree(patchSet *patch.Set, tree dirTree) map[string]*DiffStats
 			// TODO: Git binary diffs.
 			continue
 		}
+
 		switch pf.Verb {
 		case patch.Add:
 			stats = statsFromDiff(diff)
 			stats.Added = true
-			stats.Chunks = diff
 			changes[pf.Dst] = stats
 			addFileToTree(strings.Split(pf.Dst, "/"), tree, diff)
 		case patch.Edit:
 			stats = statsFromDiff(diff)
 			changes[pf.Dst] = stats
-			stats.Chunks = diff
 			editFileInTree(strings.Split(pf.Dst, "/"), tree, diff)
+		case patch.Delete:
+			stats = statsFromDiff(diff)
+			stats.Removed = true
+			changes[pf.Src] = stats
+			editFileInTree(strings.Split(pf.Src, "/"), tree, diff)
 		}
 	}
 
@@ -86,14 +90,19 @@ func editFileInTree(path []string, tree dirTree, diff patch.TextDiff) {
 	changeFileInTree(path, tree, func(folder *dirFolder) {
 		for _, entry := range folder.Entries {
 			if entry.Name() == path[len(path)-1] {
-				prevContents := entry.(*dirFile).Contents
-				entry.(*dirFile).Contents = func() (string, error) {
+				entryFile, ok := entry.(*dirFile)
+				if !ok {
+					// TODO: This happen e. g. with submodules.
+					return
+				}
+				prevContents := entryFile.Contents
+				entryFile.Contents = func() (string, error) {
 					prev, err := prevContents()
 					if err != nil {
 						return "", err
 					}
 					ret, err := applyPatch(diff, prev)
-					entry.(*dirFile).Contents = func() (string, error) {
+					entryFile.Contents = func() (string, error) {
 						return ret, err
 					}
 					return ret, err
