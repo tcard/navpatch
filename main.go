@@ -81,7 +81,12 @@ func badArgs() {
 }
 
 func usage() {
-	fmt.Println(`usage: navpatch [-h] listenAddr baseDir [patchFile]
+	fmt.Println(`Usage: navpatch [-h] listenAddr baseDir [patchFile]
 
-If patchFile is not specified, it will read a patch file from the standard input.`)
+Options:
+  -h         : show this help message.
+  listenAddr : the HTTP address in which to serve the web interface.
+  baseDir    : path to the directory to which the patch is applied.
+  patchFile  : path or URL to the patch file to be applied.
+               If ommitted, reads from stdin.`)
 }
