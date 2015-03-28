@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"html"
 	"html/template"
 	"strconv"
 	"strings"
@@ -53,7 +54,7 @@ var templates = template.Must(template.New("").Funcs(template.FuncMap{
 
 			ret += fmt.Sprintf(`<tr class="%s">`, class)
 			ret += fmt.Sprintf(`<td class="line-num">%d</td>`, i)
-			ret += fmt.Sprintf(`<td class="line-content %s">%s</td>`, class, line)
+			ret += fmt.Sprintf(`<td class="line-content %s">%s</td>`, class, html.EscapeString(line))
 			ret += "</tr>"
 		}
 		ret += `</tbody></table>`

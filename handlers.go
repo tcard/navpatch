@@ -102,7 +102,7 @@ func (h *handlers) root(w http.ResponseWriter, req *http.Request) {
 	}
 
 	err := templates.ExecuteTemplate(w, "full", &fullData{
-		Title:    "Diff - " + h.baseDir.Name(),
+		Title:    "navpatch - " + pathString,
 		TreeData: treeData{Levels: levels},
 	})
 	if err != nil {
