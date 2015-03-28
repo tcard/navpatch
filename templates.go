@@ -125,6 +125,7 @@ var templates = template.Must(template.New("").Funcs(template.FuncMap{
 
   table.diff {
   	display: block;
+    border-collapse: collapse;
   	font-family: monospace;
   	width: 800px;
   	height: 100%;
