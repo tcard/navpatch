@@ -1,4 +1,4 @@
-package main
+package navpatch
 
 import (
 	"fmt"
@@ -8,22 +8,25 @@ import (
 	"strings"
 )
 
-type fullData struct {
+type tplFullData struct {
 	Title    string
-	TreeData treeData
+	TreeData tplTreeData
+	Nav      *Navigator
 }
 
-type treeData struct {
-	Levels []treeDataLevels
+type tplTreeData struct {
+	Levels []tplTreeDataLevel
+	Nav    *Navigator
 }
 
-type treeDataLevels struct {
+type tplTreeDataLevel struct {
 	Path    string
-	Entries []treeDataLevelsEntries
+	Entries []tplTreeDataLevelEntry
 	Body    string
+	Error   error
 }
 
-type treeDataLevelsEntries struct {
+type tplTreeDataLevelEntry struct {
 	DiffStats
 	Name   string
 	IsDir  bool
@@ -36,6 +39,9 @@ var templates = template.Must(template.New("").Funcs(template.FuncMap{
 	},
 	"marginLeft": func(lvl int) template.HTMLAttr {
 		return template.HTMLAttr(strconv.Itoa(lvl * 200))
+	},
+	"toString": func(bs []byte) string {
+		return string(bs)
 	},
 	"colorify": func(diff string) template.HTML {
 		ret := `<table class="diff"><tbody>`
@@ -159,6 +165,16 @@ var templates = template.Must(template.New("").Funcs(template.FuncMap{
     overflow-y: scroll;
     border-right: 1px solid #aaa;
   }
+
+  .error {
+    padding: 10px;
+    background-color: #faa;
+    color: #600;
+    height: auto;
+    max-weight: 100%;
+    min-weight: 100%;
+    width: 800px;
+  }
   </style>
 </head>
 
@@ -176,7 +192,24 @@ var templates = template.Must(template.New("").Funcs(template.FuncMap{
 {{range $i, $level := .Levels}}
 	<div class="folder" style="left: {{marginLeft $i}}px;">
 
-	{{with .Body}}
+  {{with .Error}}
+    <div class="error">
+      <p>Error:</p>
+
+      <pre>{{.}}</pre>
+
+      <p>This typically means that the provided patch wasn't supposed to be
+      applied to the provided base directory.</p>
+
+      <p>Base directory:</p>
+
+      <pre>{{$.Nav.BasePath}}</pre>
+
+      <p>Patch:</p>
+
+      <pre>{{toString $.Nav.RawPatch}}</pre>
+    </div>
+	{{else}}{{with .Body}}
 		{{colorify .}}
 	{{else}}
 		{{range .Entries}}
@@ -189,7 +222,7 @@ var templates = template.Must(template.New("").Funcs(template.FuncMap{
 				</span>
 			</a>
 		{{end}}
-	{{end}}
+	{{end}}{{end}}
 
 	</div>
 {{end}}

@@ -8,7 +8,7 @@ Go from this: https://github.com/tyba/typeschema/pull/10/files
 
 ... to this:
 
-![Screenshot](https://s3.amazonaws.com/f.cl.ly/items/3b161u0529081L170j3l/Captura%20de%20pantalla%202015-03-27%20a%20las%2019.43.55.png)
+![Screenshot](https://cloud.githubusercontent.com/assets/727422/6881462/73db9eae-d561-11e4-9b2c-4f8eee1f8e49.png)
 
 This command displays a patch, like the ones that `git diff` produces, in a typical filesystem navigator. The interface is served through a web browser.
 
@@ -18,7 +18,6 @@ This command displays a patch, like the ones that `git diff` produces, in a typi
 * Tests?
 * A server that automatically runs this command with GitHub URLs is underway.
 * Overall integration with GitHub: 'See diff in GitHub', 'See pull request or commit', etc.
-* Better separation of concers to use as a library.
 * Textual HTTP interface.
-* See mode changes.
+* See permissions changes.
 * Detect renames.

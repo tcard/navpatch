@@ -1,4 +1,4 @@
-package main
+package navpatch
 
 import (
 	"strings"
@@ -17,7 +17,7 @@ type DiffStats struct {
 	Chunks    patch.TextDiff
 }
 
-func applyChangesToTree(patchSet *patch.Set, tree dirTree) map[string]*DiffStats {
+func ApplyChangesToTree(patchSet *patch.Set, tree DirTree) map[string]*DiffStats {
 	changes := map[string]*DiffStats{}
 
 	for _, pf := range patchSet.File {
@@ -73,12 +73,12 @@ func addFoldersToChanges(changes map[string]*DiffStats) {
 	}
 }
 
-func addFileToTree(path []string, tree dirTree, diff patch.TextDiff) {
-	changeFileInTree(path, tree, func(folder *dirFolder) {
+func addFileToTree(path []string, tree DirTree, diff patch.TextDiff) {
+	changeFileInTree(path, tree, func(folder *DirFolder) {
 		ret, err := applyPatch(diff, "")
-		entry := &dirFile{
+		entry := &DirFile{
 			name: path[len(path)-1],
-			Contents: func() (string, error) {
+			contents: func() (string, error) {
 				return ret, err
 			},
 		}
@@ -86,26 +86,22 @@ func addFileToTree(path []string, tree dirTree, diff patch.TextDiff) {
 	})
 }
 
-func editFileInTree(path []string, tree dirTree, diff patch.TextDiff) {
-	changeFileInTree(path, tree, func(folder *dirFolder) {
+func editFileInTree(path []string, tree DirTree, diff patch.TextDiff) {
+	changeFileInTree(path, tree, func(folder *DirFolder) {
 		for _, entry := range folder.Entries {
 			if entry.Name() == path[len(path)-1] {
-				entryFile, ok := entry.(*dirFile)
+				entryFile, ok := entry.(*DirFile)
 				if !ok {
 					// TODO: This happen e. g. with submodules.
 					return
 				}
-				prevContents := entryFile.Contents
-				entryFile.Contents = func() (string, error) {
+				prevContents := entryFile.contents
+				entryFile.contents = func() (string, error) {
 					prev, err := prevContents()
 					if err != nil {
 						return "", err
 					}
-					ret, err := applyPatch(diff, prev)
-					entryFile.Contents = func() (string, error) {
-						return ret, err
-					}
-					return ret, err
+					return applyPatch(diff, prev)
 				}
 				break
 			}
@@ -113,7 +109,7 @@ func editFileInTree(path []string, tree dirTree, diff patch.TextDiff) {
 	})
 }
 
-func changeFileInTree(path []string, tree dirTree, changeCallback func(*dirFolder)) {
+func changeFileInTree(path []string, tree DirTree, changeCallback func(*DirFolder)) {
 	if len(path) == 0 {
 		return
 	}
@@ -121,9 +117,9 @@ func changeFileInTree(path []string, tree dirTree, changeCallback func(*dirFolde
 	isDir := len(path) > 1
 
 	switch t := tree.(type) {
-	case *dirFolder:
+	case *DirFolder:
 		if isDir {
-			var entry dirTree
+			var entry DirTree
 			for _, oldEntry := range t.Entries {
 				if oldEntry.Name() == name {
 					entry = oldEntry
@@ -131,9 +127,9 @@ func changeFileInTree(path []string, tree dirTree, changeCallback func(*dirFolde
 				}
 			}
 			if entry == nil {
-				entry = &dirFolder{
+				entry = &DirFolder{
 					name:    name,
-					Entries: []dirTree{},
+					Entries: []DirTree{},
 				}
 				t.Entries = append(t.Entries, entry)
 			}
@@ -141,7 +137,7 @@ func changeFileInTree(path []string, tree dirTree, changeCallback func(*dirFolde
 		} else {
 			changeCallback(t)
 		}
-	case *dirFile:
+	case *DirFile:
 		// TODO?
 	}
 }

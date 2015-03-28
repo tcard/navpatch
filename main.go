@@ -8,29 +8,29 @@ import (
 	"net/http"
 	"os"
 
-	"golang.org/x/codereview/patch"
+	"github.com/tcard/navpatch/navpatch"
 )
 
 func main() {
-	listenAddr, baseDir, basePath, patchSet := processArgs()
-	_, _ = baseDir, patchSet
+	listenAddr, baseDir, rawPatch := processArgs()
 
-	handlers, err := newHandlers(baseDir, basePath, patchSet)
+	nav, err := navpatch.NewNavigator(baseDir, rawPatch)
 	if err != nil {
-		panic(err)
+		printError(err)
 	}
 
-	http.HandleFunc("/", handlers.root)
+	http.Handle("/", nav)
 
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
-		panic(err)
+		printError("starting server:", err)
 	}
-	fmt.Println("Listening at " + listener.Addr().String())
+
+	fmt.Println("Serving at " + listener.Addr().String())
 	log.Fatal(http.Serve(listener, nil))
 }
 
-func processArgs() (string, *os.File, string, *patch.Set) {
+func processArgs() (string, string, []byte) {
 	args := os.Args
 	if len(args) < 2 || len(args) > 4 {
 		badArgs()
@@ -43,13 +43,8 @@ func processArgs() (string, *os.File, string, *patch.Set) {
 		badArgs()
 	}
 
-	baseDir, err := os.Open(args[2])
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-
 	var rawPatch []byte
+	var err error
 	if len(args) == 3 {
 		rawPatch, err = ioutil.ReadAll(os.Stdin)
 	} else {
@@ -66,26 +61,31 @@ func processArgs() (string, *os.File, string, *patch.Set) {
 		os.Exit(1)
 	}
 
-	set, err := patch.Parse(rawPatch)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-
-	return args[1], baseDir, args[2], set
+	return args[1], args[2], rawPatch
 }
 
 func badArgs() {
+	fmt.Fprintln(os.Stderr, "missing, exceeding or malformed arguments.\n")
 	usage()
 	os.Exit(1)
 }
 
-func usage() {
-	fmt.Println(`Usage: navpatch [-h] listenAddr baseDir [patchFile]
+func printError(a ...interface{}) {
+	fmt.Fprintln(os.Stderr, a...)
+	os.Exit(1)
+}
 
+func usage() {
+	fmt.Println(`usage: navpatch [-h] <listenAddr> <baseDir> [<patchFile>]
+
+Visualize a patch file through a file navigator
+
+Patch files should be formatted as understood by golang.org/x/codereview/patch.
+  
 Options:
   -h         : show this help message.
   listenAddr : the HTTP address in which to serve the web interface.
+               ':0' serves at an arbitrary port.
   baseDir    : path to the directory to which the patch is applied.
   patchFile  : path or URL to the patch file to be applied.
                If ommitted, reads from stdin.`)
