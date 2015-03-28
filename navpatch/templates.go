@@ -15,8 +15,9 @@ type tplFullData struct {
 }
 
 type tplTreeData struct {
-	Levels []tplTreeDataLevel
-	Nav    *Navigator
+	Levels      []tplTreeDataLevel
+	Nav         *Navigator
+	LinksPrefix string
 }
 
 type tplTreeDataLevel struct {
@@ -213,7 +214,7 @@ var templates = template.Must(template.New("").Funcs(template.FuncMap{
 		{{colorify .}}
 	{{else}}
 		{{range .Entries}}
-			<a class="file-link {{with .IsOpen}}active{{end}}" href="{{concat $level.Path "/" .Name }}">
+			<a class="file-link {{with .IsOpen}}active{{end}}" href="{{concat $.LinksPrefix $level.Path "/" .Name }}">
 				<span class="link-name">{{.Name}}</span>
 				<span class="link-right">
 				{{with .Additions}}<span class="additions">+{{.}}</span>{{end}}

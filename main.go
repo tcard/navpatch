@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/tcard/navpatch/internal"
 	"github.com/tcard/navpatch/navpatch"
 )
 
@@ -16,18 +17,16 @@ func main() {
 
 	nav, err := navpatch.NewNavigator(baseDir, rawPatch)
 	if err != nil {
-		printError(err)
+		internal.ErrorExit(err)
 	}
-
-	http.Handle("/", nav)
 
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
-		printError("starting server:", err)
+		internal.ErrorExit("starting server:", err)
 	}
 
 	fmt.Println("Serving at " + listener.Addr().String())
-	log.Fatal(http.Serve(listener, nil))
+	log.Fatal(http.Serve(listener, nav))
 }
 
 func processArgs() (string, string, []byte) {
@@ -57,8 +56,7 @@ func processArgs() (string, string, []byte) {
 		}
 	}
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		internal.ErrorExit(err)
 	}
 
 	return args[1], args[2], rawPatch
@@ -67,11 +65,6 @@ func processArgs() (string, string, []byte) {
 func badArgs() {
 	fmt.Fprintln(os.Stderr, "missing, exceeding or malformed arguments.\n")
 	usage()
-	os.Exit(1)
-}
-
-func printError(a ...interface{}) {
-	fmt.Fprintln(os.Stderr, a...)
 	os.Exit(1)
 }
 

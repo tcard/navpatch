@@ -40,26 +40,30 @@ func NewNavigator(baseDir string, rawPatch []byte) (*Navigator, error) {
 }
 
 func (nav *Navigator) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	nav.HandleRoot(w, req)
+	nav.HandleRoot(w, req, req.URL.Path, "")
 }
 
-func (nav *Navigator) HandleRoot(w http.ResponseWriter, req *http.Request) {
-	levels, err := nav.makeTplLevels(req.URL.Path)
+func (nav *Navigator) HandleRoot(w http.ResponseWriter, req *http.Request, path string, linksPrefix string) {
+	levels, err := nav.makeTplLevels(path)
 	if err == errBadPath {
 		http.NotFound(w, req)
 		return
 	} else if err != nil && err != patch.ErrPatchFailure {
-		log.Println(req.URL.Path, err)
+		log.Println(path, err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
 	err = templates.ExecuteTemplate(w, "full", &tplFullData{
-		Title:    "navpatch - " + req.URL.Path,
-		TreeData: tplTreeData{Levels: levels, Nav: nav},
-		Nav:      nav,
+		Title: "navpatch - " + path,
+		TreeData: tplTreeData{
+			Levels: levels, 
+			Nav: nav,
+			LinksPrefix: linksPrefix,
+		},
+		Nav: nav,
 	})
 	if err != nil {
-		log.Println(req.URL.Path, err)
+		log.Println(path, err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
