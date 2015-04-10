@@ -13,16 +13,16 @@ import (
 )
 
 type Handler struct {
-	listenAddr, cloneDir string
-	gitLib               gitCommandUnix
+	cloneDir string
+	gitLib   gitCommandUnix
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	h.handleRoot(w, req)
 }
 
-func NewHandler(listenAddr, cloneDir string, gitLib string) *Handler {
-	return &Handler{listenAddr, cloneDir, gitCommandUnix{cloneDir}}
+func NewHandler(cloneDir string, gitLib string) *Handler {
+	return &Handler{cloneDir, gitCommandUnix{cloneDir}}
 }
 
 func (h *Handler) handleRoot(w http.ResponseWriter, req *http.Request) {

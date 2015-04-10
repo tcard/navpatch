@@ -16,7 +16,7 @@ var cloneDir = flag.String("cloneDir", ".", "Clone GitHub repos at this director
 
 func main() {
 	flag.Parse()
-	h := navpatchserve.NewHandler(*listenAddr, *cloneDir, "git_command_unix")
+	h := navpatchserve.NewHandler(*cloneDir, "git_command_unix")
 
 	listener, err := net.Listen("tcp", *listenAddr)
 	if err != nil {
