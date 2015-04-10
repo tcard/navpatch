@@ -18,11 +18,13 @@ Serve `navpatch` visualizations for any Git repositories on demand.
 
 	go get github.com/tcard/navpatch/navpatch.serve
 
-This command launches a web server that, on demand, clones and manages Git repositories and displays the diffs between two commits. For example, after launching `navpatch.serve`:
+This command launches a web server that, on demand, clones and manages Git repositories and displays the diffs between two commits. For example, after launching `navpatch.serve`, going to...
 
 	http://localhost:6177/github.com/tcard/navpatch?old=232eb53&new=6082eb0
 
-That would clone the `git://git@github.com/tcard/navpatch` repo, It should work with any valid `git clone` URL.
+... would clone the `git+ssh://git@github.com/tcard/navpatch` repo, copy it in another directory for this session, and display the diff between commits `232eb53` and `6082eb0`.
+
+It should work with any valid `git clone` URL.
 
 ## Dependencies
 
