@@ -86,12 +86,12 @@ func (gc gitCommandUnix) copyRepo(repoURL string, feedback func(string)) (string
 	}
 
 	feedback("Copying repo directory...")
-	out, err := exec.Command("cp", "-r", folderPath+"/", tmpPath+"/").CombinedOutput()
+	out, err := exec.Command("cp", "-r", folderPath, tmpPath+"/").CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("copying to temp folder: %v; cp output: %v", err, string(out))
 	}
 
-	return tmpPath, nil
+	return tmpPath + "/" + repoDir, nil
 }
 
 func (gc gitCommandUnix) patchNavigator(repoURL, oldCommit, newCommit string, feedback func(string)) (*navpatch.Navigator, error) {
