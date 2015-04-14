@@ -28,7 +28,11 @@ It should work with any valid `git clone` URL. It also recognizes Github pull re
 
 	http://localhost:6177/github.com/tyba/typeschema/pull/10
 
-... althought that assumes pull requests against the main branch not yet merged. (See )
+... althought that assumes pull requests against the main branch not yet merged. (See [to do list](#to-do).)
+
+For full options, including whitelisting and concurrent sessions limiting, see:
+
+	navpatch.serve -h
 
 ## Dependencies
 

@@ -14,8 +14,10 @@ import (
 )
 
 type Handler struct {
-	cloneDir string
-	gitLib   gitLib
+	cloneDir      string
+	gitLib        gitLib
+	sessionsLimit int
+	whitelist     []*regexp.Regexp
 }
 
 type requestContext struct {
@@ -40,8 +42,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	ctxt.handleRoot()
 }
 
-func NewHandler(cloneDir string, gitLib string) *Handler {
-	return &Handler{cloneDir, gitCommandUnix{cloneDir}}
+func NewHandler(cloneDir string, gitLib string, sessionsLimit int, whitelist []*regexp.Regexp) *Handler {
+	return &Handler{cloneDir, gitCommandUnix{cloneDir}, sessionsLimit, whitelist}
 }
 
 func (ctxt *requestContext) handleRoot() {
@@ -63,9 +65,24 @@ func (ctxt *requestContext) handleRoot() {
 	}
 
 	gitURL := path2git(ctxt.req.URL.Path)
+	if !ctxt.whitelisted(gitURL) {
+		ctxt.w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(ctxt.w, "Repository not in the whitelist.")
+		return
+	}
 
 	nav := getCachedNav(gitURL, oldArg, newArg)
 	if nav == nil {
+		if ctxt.h.sessionsLimit > 0 {
+			cachedNavs.RLock()
+			l := len(cachedNavs.m)
+			cachedNavs.RUnlock()
+			if l >= ctxt.h.sessionsLimit {
+				ctxt.w.WriteHeader(http.StatusServiceUnavailable)
+				fmt.Fprintln(ctxt.w, "There are too many active sessions at the moment. Try again later.")
+				return
+			}
+		}
 		var err error
 		var cleanupNav func()
 		nav, cleanupNav, err = ctxt.h.gitLib.patchNavigator(gitURL, oldArg, newArg, func(feedback string) {
@@ -231,4 +248,18 @@ func (ctxt *requestContext) cloneAndReload(gitURL string) {
 	}
 
 	ctxt.htmlReload()
+}
+
+func (ctxt *requestContext) whitelisted(gitURL string) bool {
+	if len(ctxt.h.whitelist) == 0 {
+		return true
+	}
+
+	for _, rgx := range ctxt.h.whitelist {
+		if rgx.MatchString(gitURL) {
+			return true
+		}
+	}
+
+	return false
 }

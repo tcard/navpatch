@@ -6,6 +6,8 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/tcard/navpatch/internal"
 	"github.com/tcard/navpatch/navpatch.serve/navpatchserve"
@@ -13,10 +15,23 @@ import (
 
 var listenAddr = flag.String("http", ":6177", "HTTP address to listen on.")
 var cloneDir = flag.String("cloneDir", ".", "Clone GitHub repos at this directory.")
+var sessionsLimit = flag.Int("sessionsLimit", -1, "If > 0, number of concurrent sessions allowed.")
+var whitelistFlag = flag.String("whitelist", "", "A '|'-separated list of regexps. If not empty, only git repos matching any of them will be allowed.")
 
 func main() {
 	flag.Parse()
-	h := navpatchserve.NewHandler(*cloneDir, "git_command_unix")
+
+	whitelistStr := strings.Split(*whitelistFlag, "|")
+	whitelist := make([]*regexp.Regexp, 0, len(whitelistStr))
+	for _, s := range whitelistStr {
+		rgx, err := regexp.Compile(s)
+		if err != nil {
+			internal.ErrorExit("compiling whitelist regexps:", err)
+		}
+		whitelist = append(whitelist, rgx)
+	}
+
+	h := navpatchserve.NewHandler(*cloneDir, "git_command_unix", *sessionsLimit, whitelist)
 
 	listener, err := net.Listen("tcp", *listenAddr)
 	if err != nil {
