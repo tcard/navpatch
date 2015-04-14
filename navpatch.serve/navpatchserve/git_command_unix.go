@@ -127,6 +127,11 @@ func (gc gitCommandUnix) commitsForPR(repoURL string, pr string) (oldCommit stri
 		return "", "", err
 	}
 
+	err = updateRepo(repoPath)
+	if err != nil {
+		return "", "", err
+	}
+
 	lock := repoLocks.Lock(repoPath)
 	defer lock.Unlock()
 
@@ -134,7 +139,7 @@ func (gc gitCommandUnix) commitsForPR(repoURL string, pr string) (oldCommit stri
 	cmd.Dir = repoPath
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", "", fmt.Errorf("git rev-parse --short: %v; git output: %v", err, string(out))
+		return "", "", fmt.Errorf("git rev-parse --short %s: %v; git output: %v", "origin/pr/"+pr, err, string(out))
 	}
 
 	newCommit = string(out[:len(out)-1])
@@ -143,7 +148,7 @@ func (gc gitCommandUnix) commitsForPR(repoURL string, pr string) (oldCommit stri
 	cmd.Dir = repoPath
 	out, err = cmd.CombinedOutput()
 	if err != nil {
-		return "", "", fmt.Errorf("git rev-parse --short: %v; git output: %v", err, string(out))
+		return "", "", fmt.Errorf("git rev-parse --short --abrev-ref HEAD: %v; git output: %v", err, string(out))
 	}
 
 	baseBranch := string(out[:len(out)-1])
@@ -152,7 +157,7 @@ func (gc gitCommandUnix) commitsForPR(repoURL string, pr string) (oldCommit stri
 	cmd.Dir = repoPath
 	out, err = cmd.CombinedOutput()
 	if err != nil {
-		return "", "", fmt.Errorf("git merge-base %v %v: %v; git output: %v", pr, newCommit, err, string(out))
+		return "", "", fmt.Errorf("git merge-base %v %v: %v; git output: %v", "origin/pr/"+pr, baseBranch, err, string(out))
 	}
 
 	oldCommit = string(out[:len(out)-1])
