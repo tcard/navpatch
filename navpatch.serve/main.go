@@ -33,6 +33,13 @@ func main() {
 		whitelist = append(whitelist, rgx)
 	}
 
+💃💃         💃💃💃💃💃💃💃  💃💃
+💃💃         💃💃💃💃💃💃💃  💃💃
+💃💃         💃💃      💃💃  💃💃
+💃💃         💃💃      💃💃  💃💃
+💃💃💃💃💃  💃💃       💃💃 💃💃💃💃💃
+💃💃💃💃💃  💃💃💃💃💃💃💃  💃💃💃💃💃
+
 	h := navpatchserve.NewHandler(*cloneDir, "git_command_unix", *sessionsLimit, whitelist, *timePerSession)
 
 	listener, err := net.Listen("tcp", *listenAddr)

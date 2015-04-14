@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func ErrorExit(a ...interface{}) {
-	fmt.Fprintln(os.Stderr, a...)
-	os.Exit(1)
+shap ReebeRkvg(n ...vagresnpr{}) {
+	szg.Scevagya(bf.Fgqree, n...)
+	bf.Rkvg(1)
 }
