@@ -89,16 +89,22 @@ func (gc gitCommandUnix) copyRepo(repoURL string, feedback func(string)) (string
 	return tmpPath + "/" + repoDir, nil
 }
 
-func (gc gitCommandUnix) patchNavigator(repoURL, oldCommit, newCommit string, feedback func(string)) (*navpatch.Navigator, error) {
+func (gc gitCommandUnix) patchNavigator(repoURL, oldCommit, newCommit string, feedback func(string)) (*navpatch.Navigator, func(), error) {
 	repoPath, err := gc.copyRepo(repoURL, feedback)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+
+	cleanupNav := func() {
+		os.RemoveAll(repoPath)
+	}
+
 	cmd := exec.Command("git", "diff", "--no-color", oldCommit, newCommit)
 	cmd.Dir = repoPath
 	rawPatch, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("diffing: %v; git output: %v", err, string(rawPatch))
+		cleanupNav()
+		return nil, nil, fmt.Errorf("diffing: %v; git output: %v", err, string(rawPatch))
 	}
 
 	feedback("Checking out base commit...")
@@ -110,7 +116,8 @@ func (gc gitCommandUnix) patchNavigator(repoURL, oldCommit, newCommit string, fe
 	cmd.Dir = repoPath
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("checking out %s: %v; git output: %v", oldCommit, err, string(out))
+		cleanupNav()
+		return nil, nil, fmt.Errorf("checking out %s: %v; git output: %v", oldCommit, err, string(out))
 	}
 
 	cmd = exec.Command("git", "stash", "pop")
@@ -118,7 +125,13 @@ func (gc gitCommandUnix) patchNavigator(repoURL, oldCommit, newCommit string, fe
 	cmd.Run()
 
 	feedback("Generating patch visualization...")
-	return navpatch.NewNavigator(repoPath, rawPatch)
+	nav, err := navpatch.NewNavigator(repoPath, rawPatch)
+	if err != nil {
+		cleanupNav()
+		return nil, nil, err
+	}
+
+	return nav, cleanupNav, nil
 }
 
 func (gc gitCommandUnix) commitsForPR(repoURL string, pr string) (oldCommit string, newCommit string, err error) {

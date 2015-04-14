@@ -67,7 +67,8 @@ func (ctxt *requestContext) handleRoot() {
 	nav := getCachedNav(gitURL, oldArg, newArg)
 	if nav == nil {
 		var err error
-		nav, err = ctxt.h.gitLib.patchNavigator(gitURL, oldArg, newArg, func(feedback string) {
+		var cleanupNav func()
+		nav, cleanupNav, err = ctxt.h.gitLib.patchNavigator(gitURL, oldArg, newArg, func(feedback string) {
 			ctxt.writeHTML("<p>" + feedback + "</p>")
 		})
 
@@ -77,7 +78,7 @@ func (ctxt *requestContext) handleRoot() {
 		} else if !ctxt.isNil(err) {
 			return
 		} else {
-			setCachedNav(nav, gitURL, oldArg, newArg)
+			setCachedNav(nav, cleanupNav, gitURL, oldArg, newArg)
 		}
 
 		ctxt.htmlReload()
@@ -105,7 +106,7 @@ type navArgs struct {
 	gitURL, oldArg, newArg string
 }
 
-var cachedNavTTL = 30 * time.Minute
+var cachedNavTTL = 10 * time.Minute
 
 type cachedNavsEntry struct {
 	sync.RWMutex
@@ -129,7 +130,7 @@ func getCachedNav(gitURL, oldArg, newArg string) *navpatch.Navigator {
 	return ret.nav
 }
 
-func setCachedNav(nav *navpatch.Navigator, gitURL, oldArg, newArg string) {
+func setCachedNav(nav *navpatch.Navigator, cleanupNav func(), gitURL, oldArg, newArg string) {
 	cachedNavs.Lock()
 	defer cachedNavs.Unlock()
 
@@ -157,6 +158,7 @@ func setCachedNav(nav *navpatch.Navigator, gitURL, oldArg, newArg string) {
 			cachedNavs.Lock()
 			defer cachedNavs.Unlock()
 			delete(cachedNavs.m, navArgs{gitURL, oldArg, newArg})
+			cleanupNav()
 		}
 	}
 	go evict(cachedNavTTL)
