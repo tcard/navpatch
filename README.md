@@ -14,6 +14,8 @@ Go from this: https://github.com/tyba/typeschema/pull/10/files
 
 This command displays a patch, like the ones that `git diff` produces, in a typical filesystem navigator. The interface is served through a web browser.
 
+This was done in the 10 % of self-projects time [Tyba](https://github.com/tyba) allocates for its engineers.
+
 # navpatch.serve
 
 Serve `navpatch` visualizations for any Git repositories on demand.
