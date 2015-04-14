@@ -10,6 +10,8 @@ Go from this: https://github.com/tyba/typeschema/pull/10/files
 
 ![Screenshot](https://cloud.githubusercontent.com/assets/727422/6881462/73db9eae-d561-11e4-9b2c-4f8eee1f8e49.png)
 
+([See live demo](#demo).)
+
 This command displays a patch, like the ones that `git diff` produces, in a typical filesystem navigator. The interface is served through a web browser.
 
 # navpatch.serve
@@ -33,6 +35,18 @@ It should work with any valid `git clone` URL. It also recognizes Github pull re
 For full options, including whitelisting and concurrent sessions limiting, see:
 
 	navpatch.serve -h
+
+## Demo
+
+You can check a live demo running at [http://fanyare.tcardenas.me:6177](http://fanyare.tcardenas.me:6177).
+
+Only repos at `github.com/tyba` and `github.com/tcard` will work, though.
+
+Some demo URLs:
+
+* http://fanyare.tcardenas.me:6177/github.com/tyba/typeschema?old=29b179c&new=52f9f11
+* http://fanyare.tcardenas.me:6177/github.com/tcard/navpatch?old=232eb53&new=6082eb0
+* http://fanyare.tcardenas.me:6177/github.com/tcard/navpatch/pull/1
 
 ## Dependencies
 
