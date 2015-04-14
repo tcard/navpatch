@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"sync"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 
 type Handler struct {
 	cloneDir string
-	gitLib   gitCommandUnix
+	gitLib   gitLib
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -26,11 +27,13 @@ func NewHandler(cloneDir string, gitLib string) *Handler {
 }
 
 func (h *Handler) handleRoot(w http.ResponseWriter, req *http.Request) {
-	// TODO: GitHub rewriting.
 	isNil := errorer.Numbered(func(err error, n int) {
 		log.Println("ERROR", "rootHandler", n, err)
 		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, err, "\n")
 	})
+
+	h.rewriteReq(req)
 
 	urlValues := req.URL.Query()
 	oldArg := urlValues.Get("old")
@@ -155,4 +158,40 @@ func setCachedNav(nav *navpatch.Navigator, gitURL, oldArg, newArg string) {
 		}
 	}
 	go evict(cachedNavTTL)
+}
+
+func (h *Handler) rewriteReq(req *http.Request) error {
+	return h.rewriteGithubPR(req)
+}
+
+var githubPRRegexp = regexp.MustCompile(`(github.com/[^/]+/[^/]+)/pull/([0-9]+)`)
+
+func (h *Handler) rewriteGithubPR(req *http.Request) error {
+	githubLib, ok := h.gitLib.(githubLib)
+	if !ok {
+		return nil
+	}
+
+	gitURL := path2git(req.URL.Path)
+	m := githubPRRegexp.FindStringSubmatch(gitURL)
+	if len(m) < 3 {
+		return nil
+	}
+
+	oldCommit, newCommit, err := githubLib.commitsForPR(m[1], m[2])
+
+	if err != nil {
+		oldCommit = "FIXME"
+		newCommit = "FIXME"
+	}
+
+	req.URL.Path = "/" + m[1]
+	newQuery := req.URL.Query()
+	newQuery.Del("old")
+	newQuery.Add("old", oldCommit)
+	newQuery.Del("new")
+	newQuery.Add("new", newCommit)
+	req.URL.RawQuery = newQuery.Encode()
+
+	return nil
 }

@@ -65,17 +65,12 @@ func (gc gitCommandUnix) clone(repoURL string) error {
 
 func (gc gitCommandUnix) copyRepo(repoURL string, feedback func(string)) (string, error) {
 	repoDir := md5hash(repoURL)
-	folderPath := filepath.Join(gc.cloneDir, repoDir)
-
-	_, err := os.Stat(folderPath)
+	repoPath, err := gc.repoPath(repoURL)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return "", err
-		}
-		return "", fmt.Errorf("opening repo folder: %v", err)
+		return "", err
 	}
 
-	err = updateRepo(folderPath)
+	err = updateRepo(repoPath)
 	if err != nil {
 		return "", err
 	}
@@ -86,7 +81,7 @@ func (gc gitCommandUnix) copyRepo(repoURL string, feedback func(string)) (string
 	}
 
 	feedback("Copying repo directory...")
-	out, err := exec.Command("cp", "-r", folderPath, tmpPath+"/").CombinedOutput()
+	out, err := exec.Command("cp", "-r", repoPath, tmpPath+"/").CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("copying to temp folder: %v; cp output: %v", err, string(out))
 	}
@@ -99,7 +94,6 @@ func (gc gitCommandUnix) patchNavigator(repoURL, oldCommit, newCommit string, fe
 	if err != nil {
 		return nil, err
 	}
-
 	cmd := exec.Command("git", "diff", "--no-color", oldCommit, newCommit)
 	cmd.Dir = repoPath
 	rawPatch, err := cmd.CombinedOutput()
@@ -108,15 +102,77 @@ func (gc gitCommandUnix) patchNavigator(repoURL, oldCommit, newCommit string, fe
 	}
 
 	feedback("Checking out base commit...")
+	cmd = exec.Command("git", "stash")
+	cmd.Dir = repoPath
+	cmd.Run()
+
 	cmd = exec.Command("git", "checkout", oldCommit)
 	cmd.Dir = repoPath
-	_, err = cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("checking out %s: %v; git output: %v", oldCommit, err, string(rawPatch))
+		return nil, fmt.Errorf("checking out %s: %v; git output: %v", oldCommit, err, string(out))
 	}
+
+	cmd = exec.Command("git", "stash", "pop")
+	cmd.Dir = repoPath
+	cmd.Run()
 
 	feedback("Generating patch visualization...")
 	return navpatch.NewNavigator(repoPath, rawPatch)
+}
+
+func (gc gitCommandUnix) commitsForPR(repoURL string, pr string) (oldCommit string, newCommit string, err error) {
+	repoPath, err := gc.repoPath(repoURL)
+	if err != nil {
+		return "", "", err
+	}
+
+	lock := repoLocks.Lock(repoPath)
+	defer lock.Unlock()
+
+	cmd := exec.Command("git", "rev-parse", "--short", "origin/pr/"+pr)
+	cmd.Dir = repoPath
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", "", fmt.Errorf("git rev-parse --short: %v; git output: %v", err, string(out))
+	}
+
+	newCommit = string(out[:len(out)-1])
+
+	cmd = exec.Command("git", "rev-parse", "--short", "--abrev-ref", "HEAD")
+	cmd.Dir = repoPath
+	out, err = cmd.CombinedOutput()
+	if err != nil {
+		return "", "", fmt.Errorf("git rev-parse --short: %v; git output: %v", err, string(out))
+	}
+
+	baseBranch := string(out[:len(out)-1])
+
+	cmd = exec.Command("git", "merge-base", "origin/pr/"+pr, baseBranch)
+	cmd.Dir = repoPath
+	out, err = cmd.CombinedOutput()
+	if err != nil {
+		return "", "", fmt.Errorf("git merge-base %v %v: %v; git output: %v", pr, newCommit, err, string(out))
+	}
+
+	oldCommit = string(out[:len(out)-1])
+
+	return oldCommit, newCommit, nil
+}
+
+func (gc gitCommandUnix) repoPath(repoURL string) (string, error) {
+	repoDir := md5hash(repoURL)
+	repoPath := filepath.Join(gc.cloneDir, repoDir)
+
+	_, err := os.Stat(repoPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", err
+		}
+		return "", fmt.Errorf("opening repo folder: %v", err)
+	}
+
+	return repoPath, nil
 }
 
 func md5hash(s string) string {
@@ -124,24 +180,31 @@ func md5hash(s string) string {
 	return hex.EncodeToString(h[:])
 }
 
-var repoLocks = struct {
+type repoLocksT struct {
 	sync.RWMutex
 	m map[string]*sync.Mutex
-}{m: map[string]*sync.Mutex{}}
+}
 
-func updateRepo(path string) error {
-	repoLocks.RLock()
-	lock := repoLocks.m[path]
-	repoLocks.RUnlock()
+func (ls repoLocksT) Lock(path string) *sync.Mutex {
+	ls.RLock()
+	lock := ls.m[path]
+	ls.RUnlock()
 
 	if lock == nil {
 		lock = &sync.Mutex{}
-		repoLocks.Lock()
-		repoLocks.m[path] = lock
-		repoLocks.Unlock()
+		ls.RWMutex.Lock()
+		ls.m[path] = lock
+		ls.RWMutex.Unlock()
 	}
 
 	lock.Lock()
+	return lock
+}
+
+var repoLocks = repoLocksT{m: map[string]*sync.Mutex{}}
+
+func updateRepo(path string) error {
+	lock := repoLocks.Lock(path)
 	defer lock.Unlock()
 
 	commands := [][]string{
