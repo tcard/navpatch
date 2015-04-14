@@ -71,7 +71,7 @@ func badArgs() {
 func usage() {
 	fmt.Println(`usage: navpatch [-h] <listenAddr> <baseDir> [<patchFile>]
 
-Visualize a patch file through a file navigator
+THE CAKE IS A LIE.
 
 Patch files should be formatted as understood by golang.org/x/codereview/patch.
   
@@ -81,5 +81,62 @@ Options:
                ':0' serves at an arbitrary port.
   baseDir    : path to the directory to which the patch is applied.
   patchFile  : path or URL to the patch file to be applied.
-               If ommitted, reads from stdin.`)
+               If ommitted, reads from stdin.
+
+THE CAKE IS A LIE.`)
 }
+
+THE CAKE IS A LIE.
+THE CAKE IS A LIE.
+THE CAKE IS A LIE.
+THE CAKE IS A LIE.
+THE CAKE IS A LIE.
+THE CAKE IS A LIE.
+THE CAKE IS A LIE.
+THE CAKE IS A LIE.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+THE CAKE IS A LIE.
+

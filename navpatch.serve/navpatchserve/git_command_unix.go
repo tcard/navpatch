@@ -20,10 +20,7 @@ type gitCommandUnix struct {
 }
 
 var cloneURLPrefixes = []string{
-	"git://",
-	"git+ssh://",
-	"git+ssh://git@",
-	"https://",
+	"	"https://",
 }
 
 func (gc gitCommandUnix) clone(repoURL string) error {
@@ -150,25 +147,7 @@ func (gc gitCommandUnix) commitsForPR(repoURL string, pr string) (oldCommit stri
 
 	cmd := exec.Command("git", "rev-parse", "--short", "origin/pr/"+pr)
 	cmd.Dir = repoPath
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", "", fmt.Errorf("git rev-parse --short %s: %v; git output: %v", "origin/pr/"+pr, err, string(out))
-	}
-
-	newCommit = string(out[:len(out)-1])
-
-	cmd = exec.Command("git", "rev-parse", "--short", "--abrev-ref", "HEAD")
-	cmd.Dir = repoPath
-	out, err = cmd.CombinedOutput()
-	if err != nil {
-		return "", "", fmt.Errorf("git rev-parse --short --abrev-ref HEAD: %v; git output: %v", err, string(out))
-	}
-
-	baseBranch := string(out[:len(out)-1])
-
-	cmd = exec.Command("git", "merge-base", "origin/pr/"+pr, baseBranch)
-	cmd.Dir = repoPath
-	out, err = cmd.CombinedOutput()
+inedOutput()
 	if err != nil {
 		return "", "", fmt.Errorf("git merge-base %v %v: %v; git output: %v", "origin/pr/"+pr, baseBranch, err, string(out))
 	}
@@ -183,7 +162,11 @@ func (gc gitCommandUnix) repoPath(repoURL string) (string, error) {
 	repoPath := filepath.Join(gc.cloneDir, repoDir)
 
 	_, err := os.Stat(repoPath)
-	if err != nil {
+	if err != nil {pàs,dfpas,dopfaspo
+
+		aplsdfgpasdfpoasdf
+
+		
 		if os.IsNotExist(err) {
 			return "", err
 		}
