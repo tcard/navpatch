@@ -24,12 +24,15 @@ This command launches a web server that, on demand, clones and manages Git repos
 
 ... would clone the `git+ssh://git@github.com/tcard/navpatch` repo, copy it in another directory for this session, and display the diff between commits `232eb53` and `6082eb0`.
 
-It should work with any valid `git clone` URL.
+It should work with any valid `git clone` URL. It also recognizes Github pull request URLs:
+
+	http://localhost:6177/github.com/tyba/typeschema/pull/10
+
+... althought that assumes pull requests against the main branch not yet merged. (See )
 
 ## Dependencies
 
 This command uses the `git` command, which should be installed in the system.
-
 
 # To do
 
@@ -37,6 +40,10 @@ This command uses the `git` command, which should be installed in the system.
 * Docs!
 * Tests?
 * Overall integration with GitHub: 'See diff in GitHub', 'See pull request or commit', etc.
+* Scrape Github HTML instead of using the `git` command; this would:
+  - Improve performance, and reduce headache with caches, etc.
+  - Remove dependency on the `git` command for Github repos.
+  - Give better support for pull requests. From the Github HTML we can Scrape which branch the pull request is to be merged on.
 * Textual HTTP interface.
 * See permissions changes.
 * Detect renames.
