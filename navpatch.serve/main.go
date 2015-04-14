@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/tcard/navpatch/internal"
 	"github.com/tcard/navpatch/navpatch.serve/navpatchserve"
@@ -17,6 +18,7 @@ var listenAddr = flag.String("http", ":6177", "HTTP address to listen on.")
 var cloneDir = flag.String("cloneDir", ".", "Clone GitHub repos at this directory.")
 var sessionsLimit = flag.Int("sessionsLimit", -1, "If > 0, number of concurrent sessions allowed.")
 var whitelistFlag = flag.String("whitelist", "", "A '|'-separated list of regexps. If not empty, only git repos matching any of them will be allowed.")
+var timePerSession = flag.Duration("timePerSession", 10*time.Minute, "Time before a session is ended (ie. its cached data is removed and everything is slow).")
 
 func main() {
 	flag.Parse()
@@ -31,7 +33,7 @@ func main() {
 		whitelist = append(whitelist, rgx)
 	}
 
-	h := navpatchserve.NewHandler(*cloneDir, "git_command_unix", *sessionsLimit, whitelist)
+	h := navpatchserve.NewHandler(*cloneDir, "git_command_unix", *sessionsLimit, whitelist, *timePerSession)
 
 	listener, err := net.Listen("tcp", *listenAddr)
 	if err != nil {
