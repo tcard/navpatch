@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -98,6 +99,8 @@ func DirFileToTree(f *os.File, path string) (DirTree, error) {
 			ret.Entries = append(ret.Entries, entry)
 		}
 
+		sort.Sort(byName(entries))
+
 		return ret, nil
 	} else {
 		var df *DirFile
@@ -128,3 +131,9 @@ func dirTreeString2(d DirTree, level int) string {
 
 	return ret
 }
+
+type byName []DirTree
+
+func (n byName) Len() int           { return len(n) }
+func (n byName) Swap(i, j int)      { n[i], n[j] = n[j], n[i] }
+func (n byName) Less(i, j int) bool { return n[i].Name() < n[j].Name() }
