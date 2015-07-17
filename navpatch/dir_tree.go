@@ -99,7 +99,7 @@ func DirFileToTree(f *os.File, path string) (DirTree, error) {
 			ret.Entries = append(ret.Entries, entry)
 		}
 
-		sort.Sort(byName(entries))
+		sort.Sort(byName(ret.Entries))
 
 		return ret, nil
 	} else {
