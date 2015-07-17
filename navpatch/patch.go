@@ -17,7 +17,7 @@ type DiffStats struct {
 	Chunks    patch.TextDiff
 }
 
-func ApplyChangesToTree(patchSet *patch.Set, tree DirTree) map[string]*DiffStats {
+func ApplyChangesToTree(patchSet *patch.Set, tree TreeEntry) map[string]*DiffStats {
 	changes := map[string]*DiffStats{}
 
 	for _, pf := range patchSet.File {
@@ -73,24 +73,22 @@ func addFoldersToChanges(changes map[string]*DiffStats) {
 	}
 }
 
-func addFileToTree(path []string, tree DirTree, diff patch.TextDiff) {
-	changeFileInTree(path, tree, func(folder *DirFolder) {
+func addFileToTree(path []string, tree TreeEntry, diff patch.TextDiff) {
+	changeFileInTree(path, tree, func(folder *TreeFolder) {
 		ret, err := applyPatch(diff, "")
-		entry := &DirFile{
-			name: path[len(path)-1],
-			contents: func() (string, error) {
-				return ret, err
-			},
-		}
+		entry := NewTreeFile(path[len(path)-1], func() (string, error) {
+			return ret, err
+		})
+
 		folder.Entries = append(folder.Entries, entry)
 	})
 }
 
-func editFileInTree(path []string, tree DirTree, diff patch.TextDiff) {
-	changeFileInTree(path, tree, func(folder *DirFolder) {
+func editFileInTree(path []string, tree TreeEntry, diff patch.TextDiff) {
+	changeFileInTree(path, tree, func(folder *TreeFolder) {
 		for _, entry := range folder.Entries {
 			if entry.Name() == path[len(path)-1] {
-				entryFile, ok := entry.(*DirFile)
+				entryFile, ok := entry.(*TreeFile)
 				if !ok {
 					// TODO: This happen e. g. with submodules.
 					return
@@ -109,7 +107,7 @@ func editFileInTree(path []string, tree DirTree, diff patch.TextDiff) {
 	})
 }
 
-func changeFileInTree(path []string, tree DirTree, changeCallback func(*DirFolder)) {
+func changeFileInTree(path []string, tree TreeEntry, changeCallback func(*TreeFolder)) {
 	if len(path) == 0 {
 		return
 	}
@@ -117,27 +115,25 @@ func changeFileInTree(path []string, tree DirTree, changeCallback func(*DirFolde
 	isDir := len(path) > 1
 
 	switch t := tree.(type) {
-	case *DirFolder:
+	case *TreeFolder:
 		if isDir {
-			var entry DirTree
+			var entry TreeEntry
 			for _, oldEntry := range t.Entries {
 				if oldEntry.Name() == name {
 					entry = oldEntry
 					break
 				}
 			}
+
 			if entry == nil {
-				entry = &DirFolder{
-					name:    name,
-					Entries: []DirTree{},
-				}
-				t.Entries = append(t.Entries, entry)
+				t.Entries = append(t.Entries, NewTreeFolder(name))
 			}
+
 			changeFileInTree(path[1:], entry, changeCallback)
 		} else {
 			changeCallback(t)
 		}
-	case *DirFile:
+	case *TreeFile:
 		// TODO?
 	}
 }

@@ -12,27 +12,25 @@ import (
 )
 
 type Navigator struct {
-	BasePath string
 	RawPatch []byte
-	BaseDir  DirTree
+	BaseDir  TreeEntry
 	Changes  map[string]*DiffStats
 }
 
-func NewNavigator(baseDir string, rawPatch []byte) (*Navigator, error) {
+func NewNavigator(r Repository, rawPatch []byte) (*Navigator, error) {
 	patchSet, err := patch.Parse(rawPatch)
 	if err != nil {
 		return nil, fmt.Errorf("parsing patch: %s", err)
 	}
 
-	tree, err := DirPathToTree(baseDir)
+	tree, err := r.Tree()
 	if err != nil {
-		return nil, fmt.Errorf("walking directory %s: %s", baseDir, err)
+		return nil, err
 	}
 
 	changes := ApplyChangesToTree(patchSet, tree)
 
 	return &Navigator{
-		BasePath: baseDir,
 		RawPatch: rawPatch,
 		BaseDir:  tree,
 		Changes:  changes,
@@ -56,8 +54,8 @@ func (nav *Navigator) HandleRoot(w http.ResponseWriter, req *http.Request, path 
 	err = templates.ExecuteTemplate(w, "full", &tplFullData{
 		Title: "navpatch - " + path,
 		TreeData: tplTreeData{
-			Levels: levels, 
-			Nav: nav,
+			Levels:      levels,
+			Nav:         nav,
 			LinksPrefix: linksPrefix,
 		},
 		Nav: nav,
@@ -108,10 +106,10 @@ func (nav *Navigator) makeTplLevels(path string) ([]tplTreeDataLevel, error) {
 func (nav *Navigator) makeTplLevel(
 	lvlPath string,
 	part string,
-	tree DirTree,
+	tree TreeEntry,
 ) (
 	level tplTreeDataLevel,
-	nextTree DirTree,
+	nextTree TreeEntry,
 	err error,
 ) {
 	level.Path = lvlPath
@@ -124,10 +122,10 @@ func (nav *Navigator) makeTplLevel(
 	nextTree = nil
 
 	switch t := tree.(type) {
-	case *DirFolder:
+	case *TreeFolder:
 		dir := t
 		for _, entry := range dir.Entries {
-			_, isDir := entry.(*DirFolder)
+			_, isDir := entry.(*TreeFolder)
 			isOpen := entry.Name() == part
 			diffStats := nav.Changes[(lvlPath + "/" + entry.Name())[1:]]
 			if diffStats == nil {
@@ -143,7 +141,7 @@ func (nav *Navigator) makeTplLevel(
 				nextTree = entry
 			}
 		}
-	case *DirFile:
+	case *TreeFile:
 		level.Body, err = t.Contents()
 		if err != nil {
 			level.Error = err
