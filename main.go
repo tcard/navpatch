@@ -10,12 +10,14 @@ import (
 
 	"github.com/tcard/navpatch/internal"
 	"github.com/tcard/navpatch/navpatch"
+	"github.com/tcard/navpatch/navpatch/repositories"
 )
 
 func main() {
 	listenAddr, baseDir, rawPatch := processArgs()
 
-	nav, err := navpatch.NewNavigator(baseDir, rawPatch)
+	r := repositories.NewFSRepository(baseDir)
+	nav, err := navpatch.NewNavigator(r, rawPatch)
 	if err != nil {
 		internal.ErrorExit(err)
 	}
@@ -74,7 +76,7 @@ func usage() {
 Visualize a patch file through a file navigator
 
 Patch files should be formatted as understood by golang.org/x/codereview/patch.
-  
+
 Options:
   -h         : show this help message.
   listenAddr : the HTTP address in which to serve the web interface.
