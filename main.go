@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/sourcegraph/go-vcsurl"
 	"github.com/tcard/navpatch/internal"
 	"github.com/tcard/navpatch/navpatch"
 	"github.com/tcard/navpatch/navpatch/repositories"
@@ -16,7 +17,11 @@ import (
 func main() {
 	listenAddr, baseDir, rawPatch := processArgs()
 
-	r := repositories.NewFSRepository(baseDir)
+	r, err := buildRepository(baseDir)
+	if err != nil {
+		internal.ErrorExit(err)
+	}
+
 	nav, err := navpatch.NewNavigator(r, rawPatch)
 	if err != nil {
 		internal.ErrorExit(err)
@@ -29,6 +34,18 @@ func main() {
 
 	fmt.Println("Serving at " + listener.Addr().String())
 	log.Fatal(http.Serve(listener, nav))
+}
+
+func buildRepository(path string) (navpatch.Repository, error) {
+	if _, err := os.Stat(path); err == nil {
+		return repositories.NewFSRepository(path), nil
+	}
+
+	if _, err := vcsurl.Parse(path); err == nil {
+		return repositories.NewGithubRepository(path)
+	}
+
+	return nil, fmt.Errorf("Invalid path or VCS url: %s ", path)
 }
 
 func processArgs() (string, string, []byte) {
