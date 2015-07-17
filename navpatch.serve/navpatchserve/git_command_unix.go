@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	"github.com/tcard/navpatch/navpatch"
+	"github.com/tcard/navpatch/navpatch/repositories"
 )
 
 type gitCommandUnix struct {
@@ -125,7 +126,8 @@ func (gc gitCommandUnix) patchNavigator(repoURL, oldCommit, newCommit string, fe
 	cmd.Run()
 
 	feedback("Generating patch visualization...")
-	nav, err := navpatch.NewNavigator(repoPath, rawPatch)
+	repo := repositories.NewFSRepository(repoPath)
+	nav, err := navpatch.NewNavigator(repo, rawPatch)
 	if err != nil {
 		cleanupNav()
 		return nil, nil, err
