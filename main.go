@@ -45,7 +45,7 @@ func buildRepository(path string) (navpatch.Repository, error) {
 		return repositories.NewGithubRepository(path)
 	}
 
-	return nil, fmt.Errorf("Invalid path or VCS url: %s ", path)
+	return nil, fmt.Errorf("invalid path or VCS url: %s", path)
 }
 
 func processArgs() (string, string, []byte) {
