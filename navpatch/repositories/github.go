@@ -30,7 +30,7 @@ func NewGithubRepository(url string) (*GithubRepository, error) {
 	}, nil
 }
 
-func (r *GithubRepository) GetTree() (navpatch.TreeEntry, error) {
+func (r *GithubRepository) Tree() (navpatch.TreeEntry, error) {
 	t, _, err := r.client.GetTree(r.vcs.Username, r.vcs.Name, r.vcs.Rev, true)
 	if err != nil {
 		return nil, err

@@ -11,15 +11,15 @@ import (
 // Hook up gocheck into the "go test" runner.
 func Test(t *testing.T) { TestingT(t) }
 
-type MySuite struct{}
+type GithubS struct{}
 
-var _ = Suite(&MySuite{})
+var _ = Suite(&GithubS{})
 
-func (s *MySuite) TestGithubGetTree(c *C) {
+func (s *GithubS) TestGithubTree(c *C) {
 	r, err := NewGithubRepository("https://github.com/tyba/git-fixture#6ecf0ef2c2dffb796033e5a02219af86ec6584e5")
 	c.Assert(err, IsNil)
 
-	t, err := r.GetTree()
+	t, err := r.Tree()
 	c.Assert(err, IsNil)
 
 	c.Assert(t.(*navpatch.TreeFolder).String(), Equals, `.
@@ -39,11 +39,11 @@ func (s *MySuite) TestGithubGetTree(c *C) {
 `)
 }
 
-func (s *MySuite) TestGithubContent(c *C) {
+func (s *GithubS) TestGithubContent(c *C) {
 	r, err := NewGithubRepository("https://github.com/tyba/git-fixture#6ecf0ef2c2dffb796033e5a02219af86ec6584e5")
 	c.Assert(err, IsNil)
 
-	t, err := r.GetTree()
+	t, err := r.Tree()
 	c.Assert(err, IsNil)
 
 	file := t.(*navpatch.TreeFolder).Entries[0].(*navpatch.TreeFile)

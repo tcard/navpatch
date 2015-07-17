@@ -12,7 +12,6 @@ import (
 )
 
 type Navigator struct {
-	BasePath string
 	RawPatch []byte
 	BaseDir  TreeEntry
 	Changes  map[string]*DiffStats
@@ -24,7 +23,7 @@ func NewNavigator(r Repository, rawPatch []byte) (*Navigator, error) {
 		return nil, fmt.Errorf("parsing patch: %s", err)
 	}
 
-	tree, err := r.GetTree()
+	tree, err := r.Tree()
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +31,6 @@ func NewNavigator(r Repository, rawPatch []byte) (*Navigator, error) {
 	changes := ApplyChangesToTree(patchSet, tree)
 
 	return &Navigator{
-		BasePath: "foo",
 		RawPatch: rawPatch,
 		BaseDir:  tree,
 		Changes:  changes,

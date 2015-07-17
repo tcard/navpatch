@@ -17,7 +17,7 @@ func NewFSRepository(baseDir string) *FSRepository {
 	return &FSRepository{baseDir}
 }
 
-func (r *FSRepository) GetTree() (navpatch.TreeEntry, error) {
+func (r *FSRepository) Tree() (navpatch.TreeEntry, error) {
 	return dirPathToTree(r.baseDir)
 }
 

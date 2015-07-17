@@ -3,7 +3,7 @@ package navpatch
 import "strings"
 
 type Repository interface {
-	GetTree() (TreeEntry, error)
+	Tree() (TreeEntry, error)
 }
 
 type TreeEntry interface {
